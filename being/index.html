@@ -12,24 +12,34 @@
 		 height:100%; 
 		 width:100%; 
 	}
-
+	.parallax {
+		position:absolute;
+	  perspective: 1px;
+	  height: 100vh;
+	  overflow-x: auto;
+	  overflow-y: auto;
+	}
 	#layer0
 	{
-
-		position:relative;
-		z-index: 10;
+		position:absolute;
+		transform: translateZ(-2px);scale(10);
 	}
 	#layer1
 	{
-		position:absolute;
-		z-index: 20;
+		position:relative;
+		transform: translateZ(-1px);scale(1.25);
 	}
 	#layer2
 	{
-		position:absolute;
-		z-index: 30;
-	}
+		position:relative;
+		transform: translateZ(0px);
 
+	}
+	#buttons
+	{
+		position:absolute;
+		z-index: 100;
+	}
 #glcanvas {
     position:fixed;
     width:100%;
@@ -40,23 +50,42 @@
 	<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 	<script type="text/javascript" src="resources.js"> </script>
 	<script type="text/javascript">
+		const NUM_LAYERS = 3;
 		function loadBG(res){
 			var background = document.getElementById("layer0");
 			background.style.backgroundImage=res[0];
 		}
-		function loadRes(res)
+
+		function load(res){
+			clearLayers();
+			var copy = res.slice();
+			for(var i = 0; i < NUM_LAYERS; i++)
+			{
+				var layer = document.getElementById("layer"+String(i));
+
+				loadRes(copy, layer, 1);	
+			}
+		}
+		function clearLayers(){
+			for(var i = 0; i < NUM_LAYERS; i++)
+			{
+				var layer = document.getElementById("layer"+String(i));
+				while (layer.firstChild) {
+				    layer.removeChild(layer.firstChild);
+				}	
+			}
+
+		}
+		function loadRes(res, layer, count)
 		{
-			if(res.length <= 0) return;
+			if(res.length <= 0 || count > 4) return;
 			var i = Math.floor(Math.random()* Math.floor(res.length));
 			var j = window.location.pathname.lastIndexOf("/");			
 			var file = window.location.pathname.substr(0,j)+"/" + res[i]
 			//get file extension type
 			j = file.lastIndexOf(".");			
 			var ext = file.substr(j+1,file.length);
-
-			var layer = document.getElementById("layer1");
 			var elem = null;
-
 			if(ext == "jpg" || ext == "jpeg" || ext == "gif" || ext == "png"){
 				elem= document.createElement("img");
 				elem.src=file;
@@ -77,11 +106,11 @@
 			//elem.style.height =String(elem.height*rand+250)+"px";
 			//elem.style.marginLeft =String(Math.random()* document.body.clientWidth)+"px";
 			//elem.style.marginTop = String(Math.random()* document.body.clientHeight)+"px";
-			elem.style.marginLeft =String(i* elem.style.width)+"px";
-			elem.style.marginTop = String(i* elem.style.height)+"px";
-			document.body.appendChild(elem);
+			elem.style.marginLeft =String(layer.scale*rand* elem.style.width)+"px";
+			elem.style.marginTop = String(layer.scale*rand* elem.style.height)+"px";
+			layer.appendChild(elem);
 			res.splice(i,1);			
-			loadRes(res);	
+			loadRes(res, layer, count+1);	
 
 	};
 
@@ -205,11 +234,21 @@
 
 
 	</script>
-	<body id="body" onload="loadRes(eccentricity);setupgl()">
-    <canvas id = "glcanvas"></canvas>  
+
+	<body id="body" onload="setupgl()">
+	<div id="buttons">
+		<button onclick="load(anxiety);"> Anxiety </button>
+		<button onclick="load(despair);"> Despair </button>
+		<button onclick="load(eccentricity);"> Eccentricity </button>
+		<button onclick="load(endeavor);"> Endeavor </button>
+		<button onclick="load(solitude);"> Solitude </button>
+	</div>
+    <canvas id = "glcanvas"></canvas> 
+    <div id="layers" class="parallax">
 		<div  id="layer0"></div>
 		<div id="layer1"></div>
 		<div id="layer2"></div>
+	</div>
 	</body>
 
 </html>
