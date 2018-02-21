@@ -1,0 +1,24 @@
+Website that documents the human condition by ways of example. 
+
+JS file that loads folder to page!
+
+Folders will contain images/gifs/webms related to the topic.
+Each page will randomly generate, resize, and be placed a select number or range of files ([50-100]?) from the chosen folder.
+
+//Todo in the future, used 4chan api to grab from threads with title feels? 
+
+
+Each "button" will be a random image or gif from file not webm, unless autoplay?
+
+Home Page
+------------------------------------------------
+				Perpetual Being
+------------------------------------------------
+				|				|				|
+	Despair		|		Awe		|	solitude	|	
+           		|				|				|
+------------------------------------------------
+				|				|				|
+	Time		|	Endeavor	|	Anxiety		|
+				|				|				|
+------------------------------------------------
