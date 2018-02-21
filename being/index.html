@@ -14,15 +14,15 @@
 	}
 	.parallax {
 		position:absolute;
-	  perspective: 1px;
+	  perspective: 10px;
 	  height: 100vh;
 	  overflow-x: auto;
 	  overflow-y: auto;
 	}
 	#layer0
 	{
-		position:absolute;
-		transform: translateZ(-2px);scale(10);
+		position:relative;
+		transform: translateZ(-5px);scale(4);
 	}
 	#layer1
 	{
@@ -62,7 +62,7 @@
 			for(var i = 0; i < NUM_LAYERS; i++)
 			{
 				var layer = document.getElementById("layer"+String(i));
-
+				console.log(copy);
 				loadRes(copy, layer, 1);	
 			}
 		}
