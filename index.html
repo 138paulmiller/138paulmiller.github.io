@@ -1,212 +1,908 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-	<style>
-	*
-	{
-		margin: 0;
- 		padding: 0;
-	}
 
-	body, html 
-	{
-		 height:100%; 
-		 width:100%; 
-	}
 
-	#layer0
-	{
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Paul Miller</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+  
 
-		position:relative;
-		z-index: 10;
-	}
-	#layer1
-	{
-		position:absolute;
-		z-index: 20;
-	}
-	#layer2
-	{
-		position:absolute;
-		z-index: 30;
-	}
 
-#glcanvas {
-    position:fixed;
-    width:100%;
-    height:100%;
+
+
+  <style>
+
+  #glname{
+    background-color:#1abc9c;
+ padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+  /********************************************
+* 	reset from
+* 	http://meyerweb.com/eric/tools/css/reset/
+*******************************************/
+
+
+video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    vertical-align: baseline;
 }
 
-	</style>
-	<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-	<script type="text/javascript" src="resources.js"> </script>
-	<script type="text/javascript">
-		function loadBG(res){
-			var background = document.getElementById("layer0");
-			background.style.backgroundImage=res[0];
-		}
-		function loadRes(res)
-		{
-			if(res.length <= 0) return;
-			var i = Math.floor(Math.random()* Math.floor(res.length));
-			var j = window.location.pathname.lastIndexOf("/");			
-			var file = window.location.pathname.substr(0,j)+"/" + res[i]
-			//get file extension type
-			j = file.lastIndexOf(".");			
-			var ext = file.substr(j+1,file.length);
+section {
+    display: block;
+}
 
-			var layer = document.getElementById("layer1");
-			var elem = null;
+body {
+    line-height: 1;
+}
 
-			if(ext == "jpg" || ext == "jpeg" || ext == "gif" || ext == "png"){
-				elem= document.createElement("img");
-				elem.src=file;
-			}
-			else if(ext == "webm" || ext == "mp4"){
-				elem= document.createElement("video");
+ol,
+ul {
+    list-style: none;
+}
 
-				if (elem.canPlayType('video/mp4').length > 0) {
-					elem.src=file;
-					elem.autoPlay = true;		
-					elem.loop = true;					
-					elem.controls = true;
-				}
-			}
-			var rand = Math.random()*1.25+0.15;
-			elem.style.transform = "scale("+String(rand)+")";
-			//elem.style.width =String(elem.width*rand+250)+"px";
-			//elem.style.height =String(elem.height*rand+250)+"px";
-			//elem.style.marginLeft =String(Math.random()* document.body.clientWidth)+"px";
-			//elem.style.marginTop = String(Math.random()* document.body.clientHeight)+"px";
-			elem.style.marginLeft =String(i* elem.style.width)+"px";
-			elem.style.marginTop = String(i* elem.style.height)+"px";
-			document.body.appendChild(elem);
-			res.splice(i,1);			
-			loadRes(res);	
+blockquote,
+q {
+    quotes: none;
+}
 
-	};
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+    content: none;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
 
 
-//WEBGL
+/****************
+*	COMMONS
+****************/
 
- var vSource =`
-		attribute vec2 coord; 
-		varying vec2 vcoord;
-        void main(void) {  
-        	vcoord = coord;
-        	gl_Position = vec4(coord,0.0, 1.0);
-		}
+body,
+html {
+    font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-size: 13px;
+    color: #40484f;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.46153846;
+    text-align: left;
+    -webkit-text-size-adjust: 100%;
+}
 
-	`;
+p {
+    display: block;
+    margin-bottom: 1.3em;
+}
 
-   var fSource = `
-		precision mediump float;
-		uniform float time;
-		varying vec2 vcoord;
+a {
+    color: #0095ff;
+    text-decoration: none;
+}
 
-		void main(void) {
-			float color = smoothstep(1.0, 
-					sin(time/10.0)*3.0+0.2, 		//step (width)size, negative inverts colors
+a:hover {
+    color: #0c65a5;
+    text-decoration: underline;
+}
 
-					 abs(length(vcoord) 
-			    + sin(atan(vcoord.y, vcoord.x) 
-			    * abs(100.0*tan(vcoord.x+vcoord.y)*cos(tan(sin(length(vcoord))*time/10.0))  ) 		//number of petals
-			    - (radians(time))*3.141 / 2.0) )	//rotation
-			    *9.0								//size
-			    );
-			gl_FragColor = vec4(color*0.5,color*0.3,color*0.25, 1.0 );
-			gl_FragColor.x +=  step(gl_FragColor.y+1.0, 0.3);
-			gl_FragColor.y +=  step(gl_FragColor.z+1.0, 0.3);
-			gl_FragColor.z +=  step(gl_FragColor.x+1.0, 0.1);
-		}
-	`;
+ul {
+    margin-top: 1rem;
+}
 
-	function setupgl(){
-		 var canvas = document.getElementById('glcanvas');
-		 var gl = canvas.getContext('experimental-webgl');
-		canvas.width  = document.body.clientWidth;
-		canvas.height = document.body.clientHeight;
-		var vertices = [-1.0, -1.0, 
-						-1.0, 1.0, 
-						1.0, -1.0,
-						1.0, 1.0, 
-						1.0, -1.0, 
-						-1.0, 1.0,
-						];
+li {
+    list-style-type: square;
+    list-style-position: outside;
+    margin-left: 1.3em;
+}
 
-         var vertex_buffer = gl.createBuffer();
+.highlights>li>p {
+    margin-bottom: 0.5em;
+}
 
-         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);         
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-         gl.bindBuffer(gl.ARRAY_BUFFER, null);
+h1 {
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.67rem;
+}
+
+h3 {
+    font-size: 1.27rem;
+}
+
+em {
+    color: #757575;
+}
+
+blockquote {
+    margin-bottom: 1em;
+}
+
+strong {
+    font-weight: 700;
+}
 
 
-	     var vShader = gl.createShader(gl.VERTEX_SHADER);
-         gl.shaderSource(vShader, vSource);
-         gl.compileShader(vShader);
-		var compiled = gl.getShaderParameter(vShader, gl.COMPILE_STATUS);
-		console.log('Shader compiled successfully: ' + compiled);
-		var compilationLog = gl.getShaderInfoLog(vShader);
-		console.log('Shader compiler log: ' + compilationLog);
+/* main container */
 
+#resume {
+    padding: 1rem;
+    margin-top: 2rem;
+}
+
+
+/* every section wrapper */
+
+.section {
+    margin-bottom: 1rem;
+}
+
+section .location {
+    margin-right: .5em;
+    color: #606d76;
+    font-weight: 700;
+}
+
+#contact {
+    margin-top: .5rem;
+}
+
+#profiles .item {
+    padding: 0;
+}
+
+#header>#profiles,
+#header>#contact,
+#skills,
+#languages,
+#interests {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-flow: row wrap;
+    flex-flow: row wrap;
+    -webkit-justify-content: flex-start;
+    justify-content: flex-start;
+}
+
+#header>div {
+    line-height: 1.5;
+}
+
+#header>div>div {
+    margin-right: 1.2em;
+}
+
+#header h1.name {
+    font-size: 2.8rem;
+    font-weight: 100;
+    line-height: 100%;
+}
+
+#header h2.label {
+    color: #202931;
+    font-size: 1.47rem;
+    font-weight: 300;
+}
+
+#header .picture {
+    width: 11em;
+    float: right;
+    border-radius: 4px;
+}
+
+.main-summary {
+    background: #f1f8ff;
+    padding: 1.2em 1em;
+    margin-top: 1rem;
+}
+
+.main-summary p {
+    margin: .15em 0 0;
+}
+
+h2.section-title {
+    display: inline-block;
+    background: #fff;
+    padding: 0 1em 0.3em 0;
+    color: #ff6d1f;
+    text-transform: uppercase;
+    font-weight: 600;
+    border: none;
+    font-size: .9rem;
+}
+
+.section>header {
+    position: relative;
+}
+
+.fa {
+    margin-right: 0.25em;
+}
+
+.section>header::after {
+    position: absolute;
+    left: 0;
+    top: .7em;
+    height: 1px;
+    background: #ccc;
+    content: "";
+    width: 100%;
+    z-index: -100;
+    display: block;
+}
+
+.section.main-summary>section {
+    margin: 0;
+}
+
+.section>section>header {
+    font-size: 1.38rem;
+    position: relative;
+    margin-top: .7em;
+}
+
+.section>section>header:first-of-type {
+    margin: 0;
+}
+
+.section>section>header .space-left {
+    position: absolute;
+    left: -1.56rem;
+    top: 5px;
+    color: #aaa;
+    line-height: 1;
+    opacity: 0;
+}
+
+.position,
+.company,
+.organization,
+.institution,
+.date,
+.area,
+.studyType,
+.title,
+.awarder {
+    display: inline;
+}
+
+.position,
+.studyType,
+.area,
+.title,
+.language,
+.name {
+    font-weight: 600;
+}
+
+.company::before,
+.institution::before,
+.organization::before,
+.awarder::before {
+    content: "at "
+}
+
+.company,
+.institution,
+.organization,
+.awarder {
+    color: #606d76;
+    font-weight: 400;
+}
+
+.section header .date {
+    font-size: 1rem;
+    display: inline-table;
+    padding: .1em 0;
+    font-weight: 600;
+}
+
+ul.keywords,
+ul.courses {
+    margin-top: .5em;
+}
+
+ul.keywords li,
+ul.courses li {
+    display: inline-block;
+    margin: 2px 2px 2px 0;
+    padding: 4px 5px 5px;
+    font-size: .9rem;
+    line-height: 1;
+    text-transform: lowercase;
+    color: #3e6d8e;
+    background-color: #dfeaf1;
+    border: 0 solid #dfeaf1;
+    white-space: nowrap;
+}
+
+ul.keywords li:hover,
+ul.courses li:hover {
+    background: #dfeaf0;
+}
+
+.item {
+    padding: .5em 0;
+}
+
+.gpa {
+    padding-bottom: .5em;
+}
+
+.fa.social {
+    font-size: 1.1em;
+}
+
+
+/* Social Media Brand Colors */
+
+.google-plus {
+    color: #dd4b39;
+}
+
+.tumblr {
+    color: #32506d;
+}
+
+.foursquare {
+    color: #0072b1;
+}
+
+.facebook {
+    color: #3b5998;
+}
+
+.linkedin {
+    color: #007bb6;
+}
+
+.pinterest {
+    color: #cb2027;
+}
+
+.dribbble {
+    color: #ea4c89;
+}
+
+.instagram {
+    color: #517fa4;
+}
+
+.twitter {
+    color: #00aced;
+}
+
+.soundcloud {
+    color: #ff3a00;
+}
+
+.wordpress {
+    color: #21759b;
+}
+
+.youtube {
+    color: #bb0000;
+}
+
+.github {
+    color: #171515;
+}
+
+.stack-overflow {
+    color: #828386;
+    position: relative;
+}
+
+.flickr {
+    color: #ff0084;
+}
+
+.stack-overflow::after {
+    position: absolute;
+    left: 0;
+    content: '\f16c';
+    color: #f68a1f;
+    overflow: hidden;
+    height: 100%;
+}
+
+.telegram {
+    color: #2291c3;
+}
+
+#languages .item,
+#skills .item,
+#interests .item {
+    width: 15em;
+    padding: 0 .5em .5em 0;
+    border-bottom: none;
+}
+
+#skills .item {
+    width: 16em;
+}
+
+#skills .item .keywords {
+    width: 15em;
+}
+
+
+/* Skill chart */
+
+.level {
+    margin-bottom: .5em;
+}
+
+.level .bar {
+    border: 1px solid #ddd;
+    display: block;
+    width: 10em;
+    height: 5px;
+    position: relative;
+}
+
+.level .bar::after {
+    position: absolute;
+    content: " ";
+    top: 0;
+    left: 0;
+    background: black;
+    height: 5px;
+}
+
+.level.beginner .bar::after {
+    background: #EB5F51;
+    width: 2.5em;
+}
+
+.level.intermediate .bar::after {
+    background: #ffdf1f;
+    width: 5em;
+}
+
+.level.advanced .bar::after,
+.level.fluent .bar::after {
+    background: #5CB85C;
+    width: 7.5em;
+}
+
+.level.master .bar::after,
+.level.native.speaker .bar::after {
+    background: #59C596;
+    width: 10em;
+}
+
+#references .item {
+    padding-left: .5em;
+    border-left: 5px solid #ff6d1f;
+}
+
+.toggle-item {
+  visibility: hidden;
+}
+
+/******************
+*	HELPER CLASSES
+******************/
+
+.clear::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.display {
+    display: block;
+    opacity: 1 !important;
+}
+
+.margin1 {
+    margin-bottom: .5rem;
+}
+
+
+/****************
+*		TABLET
+****************/
+
+@media screen and (min-width: 602px) {
+    #resume {
+        width: 80%;
+        margin: 0 auto;
+    }
+}
+
+
+/****************
+*		LAPTOP
+****************/
+
+@media screen and (min-width: 1025px) {
+    li {
+        margin-left: 1.5em;
+    }
+    #resume {
+        width: 820px;
+        margin: 2rem auto;      
+    }
+    .section>section>header .space-left {
+        opacity: 1;
+        cursor: pointer;
+    }
+    .section>section {
+        margin-left: 1.67rem;
+    }
+    .toggle-item {
+        transform: translate(-9999px);
+    }
+    .toggle-item+label {
+        display: block;
+        margin-top: -16px;
+    }
+    .toggle-item:checked+label:after {
+        content: '\f0d7';
+    }
+    .toggle-item+label:after {
+        float: left;
+        cursor: pointer;
+        margin-left: -20px;
+        color: #aaa;
+        font-size: 16px;
+        content: '\f0da';
+        font-family: Fontawesome;
+    }
+    .toggle-item~.item {
+        height: 0;
+        opacity: 0;
+    }
+    .toggle-item:checked~.item {
+        height: auto;
+        opacity: 1;
+        transition: all .5s linear;
+    }
+    .company::before,
+    .institution::before,
+    .organization::before,
+    .awarder::before {
+        content: "| ";
+    }
+    .header-left {
+        float: left;
+        width: 70%;
+        word-break: normal;
+    }
+    .section header .date {
+        float: right;
+        padding: .2em;
+    }
+    .display {
+        display: none;
+    }
+    .display:not(.none) {
+        display: block;
+    }
+}
+
+@media print {
+    #resume {
+        margin: 0;
+        padding: 0;
+        -ms-word-wrap: break-word;
+        word-wrap: break-word;
+        line-height: 1.3;
+        /*font-family: Arial, Georgia, "Lucida Grande", sans-serif;*/
+    }
+    @page {
+        margin: 1cm 1.4cm;
+    }
+    .item-count {
+        display: none;
+    }
+    .company::before,
+    .institution::before,
+    .organization::before,
+    .awarder::before {
+        content: "at ";
+    }
+    .main-summary {
+        padding: 2rem 0;
+    }
+    .section {
+        margin: .8rem 0;
+        padding: 0;
+    }
+    .section header {
+        padding-bottom: .15rem;
+    }
+    .section .location {
+        padding-bottom: .15rem;
+    }
+    .stack-overflow::after {
+        content: "";
+    }
+    .fa.social {
+        color: #828386;
+    }
+    ul {
+        margin-top: .4em;
+    }
+    ul,
+    li {
+        padding: 0;
+    }
+    ul.keywords li,
+    ul.courses li {
+        margin: 0;
+        padding: 0;
+        font-size: .8rem;
+        text-transform: lowercase;
+    }
+    ul.keywords li::after,
+    ul.courses li::after {
+        padding: 0 0 0 .1rem;
+        content: " |";
+    }
+    ul.keywords::before,
+    ul.courses::before {
+        font-size: .8rem;
+        font-weight: 600;
+    }
+    ul.keywords::before {
+        content: "Skills acquired: ";
+    }
+    #skills .keywords::before {
+        content: '';
+    }
+    .section p {
+        margin: 0;
+        padding: 0;
+    }
+    ul.courses::before {
+        content: "Major courses: ";
+    }
+    ul.keywords li:last-of-type::after,
+    ul.courses li:last-of-type::after {
+        content: "";
+    }
+    .level em {
+        font-style: normal;
+        padding: .1em 0;
+    }
+    .level .bar {
+        display: none;
+    }
+    #profiles .item {
+        padding: 0;
+    }
+    .item.display {
+        display: block;
+        opacity: 1 !important;
+    }
+}
+
+  </style>
   
-         var fShader = gl.createShader(gl.FRAGMENT_SHADER);
-         gl.shaderSource(fShader, fSource);
-         gl.compileShader(fShader);
+  </head>
 
-		var compiled = gl.getShaderParameter(fShader, gl.COMPILE_STATUS);
-		console.log('Shader compiled successfully: ' + compiled);
-		var compilationLog = gl.getShaderInfoLog(fShader);
-		console.log('Shader compiler log: ' + compilationLog);
+  <body>
 
-         var shader = gl.createProgram();
+  <div id="resume">
+    	<header id="header" class="clear">
+    		<div>
+    			<h1 class="name">Paul Miller</h1>
+    			<h2 class="label">Programmer</h2>
+    		</div>
+    		
+    		<span class="location">
+    			<span class="region">California</span> 
+    			<span class="countryCode">US</span> 
+    		</span>
+    		
+    
+    		<div id="contact">
+    			<div class="email">
+    				<span class="fa fa-envelope-o"></span>
+    				<a href="mailto:138paulmiller@gmail.com">138paulmiller@gmail.com</a>
+    			</div>
+    			<div class="phone">
+    				<span class="fa fa-mobile"></span>
+    				<a href="tel:(949) 412-7540">(949) 412-7540</a>
+    			</div>
+    		</div>
+    
+    		<div id="profiles">
+    			<div class="item">
+    				<div class="username">
+    					<span class="fa fa-github github social"></span>
+    					<span class="url">
+    						<a target="_blank" href="https://github.com/138paulmiller">138paulmiller</a>
+    					</span> 
+    				</div>
+    			</div>
+    		</div>
+    	</header>
+    
+    	<section class="section main-summary">
+    		<section>
+    			<div><p>Immensely driven self-learner with a wide interest in practical and theoretical computer science topics. Looking for challenging tasks to exercise my analytical and problem solving capabilities that will help broaden my programming skills.</p></div>
+    		</section>
+    	</section>
+    
+    <section class="section margin1">
+    	<header>
+    		<h2 class='section-title'>Skills</h2>
+    	</header>
+    	<section id="skills">
+    		<div class="item">
+    			<h3 class="name">
+    				Programmming Languages
+    			</h3>
+    			 			<ul class="keywords">
+    				<li>C/C++</li>
+    				<li>Python</li>
+    				<li>Java</li>
+    				<li>Bash</li>
+    				<li>Scheme</li>
+    				<li>Assembly</li>
+    			</ul>
+    		</div>
+    		<div class="item">
+    			<h3 class="name">
+    				Frameworks/Libraries
+    			</h3>
+    			 			<ul class="keywords">
+    				<li>Qt</li>
+    				<li>OpenGL</li>
+    				<li>Lex/Yacc</li>
+    			</ul>
+    		</div>
+    	</section>
+    </section>
+    <section class="section">
+      <header>
+        <h2 class='section-title'>Work Experience <span class="item-count">(3)</span></h2>
+      </header>
+    
+      <section id="work">
+        <section class="work-item">
+    
+            <input id="work-item-0" type="checkbox" class="toggle-item" checked="checked" />
+            <label for="work-item-0"></label>
+    
+    			<header>
+    				<div class="position">Software Consultant</div>
+    				<div class="company">Senseye Inc.</div>
+    				<div class="date">
+    				  <span class="startDate">December 2017</span> 
+    					<span class="endDate">- January 2018</span> 
+    				</div>
+    			</header>
+    			
+        	<span class="website">
+        		<a target="_blank" href="http://www.senseye.co">http://www.senseye.co</a>
+        	</span>      	<div class="item" id="work-item">
+            <div class="summary">
+              <p><p>As a Software Consultant at Senseye, it was my responsibility to complete development tasks for a Qt Application that charted information for the human-factors and flight information during a Prepar3d flight simulation. I was contracted by the company to work alongside the Software engineering team to help them finish the project requirements.</p></p>
+            </div>
+            <ul class="highlights">
+                <li><p>Sharpened my ability to quickly meet changing project requirements</p></li>
+                <li><p>Working remotely forced me to stengthened my Git workflow alongside the Software Team</p></li>
+            </ul>
+        	</div>
+        </section>
+        <section class="work-item">
+    
+            <input id="work-item-1" type="checkbox" class="toggle-item" />
+            <label for="work-item-1"></label>
+    
+    			<header>
+    				<div class="position">Supplemental Instruction Leader</div>
+    				<div class="company">Calfornia State University Fullerton</div>
+    				<div class="date">
+    				  <span class="startDate">January 2017</span> 
+    					<span class="endDate">- April 2018</span> 
+    				</div>
+    			</header>
+    			
+         	<div class="item" id="work-item">
+            <div class="summary">
+              <p><p>Supplemental Instruction is an academic assistance program that provides weekly, peer-led group study sessions for students taking  high failure rate courses, The course assigned to me covered Data Structures in C++. I was in charge of creating and leading weekly study sessions covering lists, trees, graphs, and hash tables.</p></p>
+            </div>
+            <ul class="highlights">
+                <li><p>Helped train my effective communication skills</p></li>
+                <li><p>Created pseudocode and C++ implementation examples for multiple data structure related topics</p></li>
+                <li><p>Encouraged student engagement and collaborative learning by designing potential exam questions</p></li>
+            </ul>
+        	</div>
+        </section>
+        <section class="work-item">
+    
+            <input id="work-item-2" type="checkbox" class="toggle-item" />
+            <label for="work-item-2"></label>
+    
+    			<header>
+    				<div class="position">Instructional Student Assistant</div>
+    				<div class="company">Calfornia State University Fullerton</div>
+    				<div class="date">
+    				  <span class="startDate">August 2016</span> 
+    					<span class="endDate">- December 2016</span> 
+    				</div>
+    			</header>
+    			
+         	<div class="item" id="work-item">
+            <div class="summary">
+              <p><p>Responsible for grading homework and exams for two Data Structures courses offered at Cal State Fullerton.</p></p>
+            </div>
+            <ul class="highlights">
+                <li><p>By having weekly deadlines, this position greatly improved my time management skills</p></li>
+            </ul>
+        	</div>
+        </section>
+      </section>
+    </section>
+    <section class="section">
+      <header>
+        <h2 class='section-title'>Education <span class="item-count">(1)</span></h2>
+      </header>
+    
+      <section id="education">
+        <section class="education-item">
+          <header>
+            <div class="header-left">
+              <div class="studyType">
+                Bachelor
+              </div>
+              <div class="area">
+                Computer Science
+              </div>
+              <div class="institution">
+                Calfornia State University Fullerton
+              </div>
+            </div>
+            <div class="date">
+              <span class="startDate">
+              2015
+              </span>
+              <span class="endDate">
+              - 2018
+              </span>
+            </div>
+          </header>
+    
+    
+          <ul class="courses">
+            <li>Algorithm Engineering</li>
+            <li>Theory of Computation</li>
+            <li>Compiler Design</li>
+            <li>Computer Architecture</li>
+          </ul>
+    
+          <div class="item">
+            <div class='gpa'>
+              <strong> Grade:</strong> <span>3.4</span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
 
-         gl.attachShader(shader, vShader); 
-         
-         gl.attachShader(shader, fShader);
-
-         gl.linkProgram(shader);
-		
-	 	var  start = Date.now();;
-		var elapsed = 0;
-		var speed = 0.01;
-		function draw(){
-			setTimeout(function(){
-
-				gl.clearColor(0.5, 0.5, 0.5, 0.9);
-				gl.enable(gl.DEPTH_TEST); 
-
-				gl.clear(gl.COLOR_BUFFER_BIT);
-				gl.useProgram(shader);
-
-
-				var time = gl.getUniformLocation(shader, "time");
-				elapsed += (Date.now() - start)*speed;
-				gl.uniform1f(time, elapsed);
- 				start = Date.now();
-
-				gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-				var coord = gl.getAttribLocation(shader, "coord");
-
-				gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
-				gl.enableVertexAttribArray(coord);
-				//gl.viewport(0,0, document.body.width, document.body.height);
-				gl.viewport(0,0,canvas.width,canvas.height);
-
-				gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-				draw(); //loop
-		}, 60);
-		};
-		draw();
-	}
-
-
-	</script>
-	<body id="body" onload="loadRes(eccentricity);setupgl()">
-    <canvas id = "glcanvas"></canvas>  
-		<div  id="layer0"></div>
-		<div id="layer1"></div>
-		<div id="layer2"></div>
-	</body>
-
+  </body>
 </html>
+

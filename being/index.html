@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+	<style>
+	*
+	{
+		margin: 0;
+ 		padding: 0;
+	}
+
+	body, html 
+	{
+		 height:100%; 
+		 width:100%; 
+	}
+
+	#layer0
+	{
+
+		position:relative;
+		z-index: 10;
+	}
+	#layer1
+	{
+		position:absolute;
+		z-index: 20;
+	}
+	#layer2
+	{
+		position:absolute;
+		z-index: 30;
+	}
+
+#glcanvas {
+    position:fixed;
+    width:100%;
+    height:100%;
+}
+
+	</style>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript" src="resources.js"> </script>
+	<script type="text/javascript">
+		function loadBG(res){
+			var background = document.getElementById("layer0");
+			background.style.backgroundImage=res[0];
+		}
+		function loadRes(res)
+		{
+			if(res.length <= 0) return;
+			var i = Math.floor(Math.random()* Math.floor(res.length));
+			var j = window.location.pathname.lastIndexOf("/");			
+			var file = window.location.pathname.substr(0,j)+"/" + res[i]
+			//get file extension type
+			j = file.lastIndexOf(".");			
+			var ext = file.substr(j+1,file.length);
+
+			var layer = document.getElementById("layer1");
+			var elem = null;
+
+			if(ext == "jpg" || ext == "jpeg" || ext == "gif" || ext == "png"){
+				elem= document.createElement("img");
+				elem.src=file;
+			}
+			else if(ext == "webm" || ext == "mp4"){
+				elem= document.createElement("video");
+
+				if (elem.canPlayType('video/mp4').length > 0) {
+					elem.src=file;
+					elem.autoPlay = true;		
+					elem.loop = true;					
+					elem.controls = true;
+				}
+			}
+			var rand = Math.random()*1.0+0.15;
+			elem.style.transform = "scale("+String(rand)+")";
+			//elem.style.width =String(elem.width*rand+250)+"px";
+			//elem.style.height =String(elem.height*rand+250)+"px";
+			//elem.style.marginLeft =String(Math.random()* document.body.clientWidth)+"px";
+			//elem.style.marginTop = String(Math.random()* document.body.clientHeight)+"px";
+			elem.style.marginLeft =String(i* elem.style.width)+"px";
+			elem.style.marginTop = String(i* elem.style.height)+"px";
+			document.body.appendChild(elem);
+			res.splice(i,1);			
+			loadRes(res);	
+
+	};
+
+
+//WEBGL
+
+ var vSource =`
+		attribute vec2 coord; 
+		varying vec2 vcoord;
+        void main(void) {  
+        	vcoord = coord;
+        	gl_Position = vec4(coord,0.0, 1.0);
+		}
+
+	`;
+
+   var fSource = `
+		precision mediump float;
+		uniform float time;
+		varying vec2 vcoord;
+
+		void main(void) {
+			float color = smoothstep(1.0, 
+					cos((sin(time/10.0)))*3.0+0.2, 		//step (width)size, negative inverts colors
+
+					 abs(length(vcoord) 
+			    + sin(atan(vcoord.y, vcoord.x) 
+			    * abs(80.0*tan(vcoord.x+vcoord.y)*sin(dot(vcoord, vcoord*time))*cos(tan(length(vcoord*sin(100.0+time/1000.0)*10.0)))  ) 		//number of petals
+			    - (radians(time))*3.141 / 2.0) )	//rotation
+			    *9.0								//size
+			    );
+			gl_FragColor = vec4(
+									color*sin(-1.0*tan(vcoord.x*tan(time/100.0)*sin(vcoord.x*cos(cos(vcoord.x-vcoord.y))*2.2)+(vcoord.x+vcoord.y))*time/10.0),
+									color*0.3,
+									color*0.25, 1.0 );
+			gl_FragColor.x +=  sin(time/10.0+tan((vcoord.x+vcoord.y)/10.0));
+			gl_FragColor.y +=  sin(time/18.0+tan((vcoord.x+vcoord.y)/4.0));
+			gl_FragColor.z +=  step(1.0, sin(time)*gl_FragColor.z);
+		}
+	`;
+
+	function setupgl(){
+		 var canvas = document.getElementById('glcanvas');
+		 var gl = canvas.getContext('experimental-webgl');
+		canvas.width  = document.body.clientWidth;
+		canvas.height = document.body.clientHeight;
+		var vertices = [-1.0, -1.0, 
+						-1.0, 1.0, 
+						1.0, -1.0,
+						1.0, 1.0, 
+						1.0, -1.0, 
+						-1.0, 1.0,
+						];
+
+         var vertex_buffer = gl.createBuffer();
+
+         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);         
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+         gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+
+	     var vShader = gl.createShader(gl.VERTEX_SHADER);
+         gl.shaderSource(vShader, vSource);
+         gl.compileShader(vShader);
+		var compiled = gl.getShaderParameter(vShader, gl.COMPILE_STATUS);
+		console.log('Shader compiled successfully: ' + compiled);
+		var compilationLog = gl.getShaderInfoLog(vShader);
+		console.log('Shader compiler log: ' + compilationLog);
+
+  
+         var fShader = gl.createShader(gl.FRAGMENT_SHADER);
+         gl.shaderSource(fShader, fSource);
+         gl.compileShader(fShader);
+
+		var compiled = gl.getShaderParameter(fShader, gl.COMPILE_STATUS);
+		console.log('Shader compiled successfully: ' + compiled);
+		var compilationLog = gl.getShaderInfoLog(fShader);
+		console.log('Shader compiler log: ' + compilationLog);
+
+         var shader = gl.createProgram();
+
+         gl.attachShader(shader, vShader); 
+         
+         gl.attachShader(shader, fShader);
+
+         gl.linkProgram(shader);
+		
+	 	var  start = Date.now();;
+		var elapsed = 0;
+		var speed = 0.01;
+		function draw(){
+			setTimeout(function(){
+
+				gl.clearColor(0.5, 0.5, 0.5, 0.9);
+				gl.enable(gl.DEPTH_TEST); 
+
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.useProgram(shader);
+
+
+				var time = gl.getUniformLocation(shader, "time");
+				elapsed += (Date.now() - start)*speed;
+				gl.uniform1f(time, elapsed);
+ 				start = Date.now();
+
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+				var coord = gl.getAttribLocation(shader, "coord");
+
+				gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+				gl.enableVertexAttribArray(coord);
+				//gl.viewport(0,0, document.body.width, document.body.height);
+				gl.viewport(0,0,canvas.width,canvas.height);
+
+				gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+				draw(); //loop
+		}, 60);
+		};
+		draw();
+	}
+
+
+	</script>
+	<body id="body" onload="loadRes(eccentricity);setupgl()">
+    <canvas id = "glcanvas"></canvas>  
+		<div  id="layer0"></div>
+		<div id="layer1"></div>
+		<div id="layer2"></div>
+	</body>
+
+</html>

@@ -20,7 +20,6 @@ var eccentricity = [
 "eccentricity/helvetica.webm",
 "eccentricity/hyde_laff.webm",
 "eccentricity/powsi.webm",
-"eccentricity/senseye.png",
 "eccentricity/skelly_punch.gif",
 "eccentricity/street_rub.webm",
 ];
