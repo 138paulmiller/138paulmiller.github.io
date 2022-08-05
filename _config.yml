@@ -8,3 +8,4 @@ description: Personal Page
 layout: default
 title: "Paul Miller"
 permalink: /
+theme: jekyll-theme-midnight
