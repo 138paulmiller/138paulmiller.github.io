@@ -14,6 +14,6 @@ Unreal Engine 5 editor tool for designing and creating procedurally generated bu
 
 Demo using assets from the [City Sample Buildings](https://www.unrealengine.com/marketplace/en-US/product/city-sample-buildings) content pack.
 
-<a href="UE5/ProcBuildingDesigner.mp4" title="ProcBuildingDesigner"><img src="UE5/ProcBuildingDesigner.png"/></a>
-
-
+<video height="540" controls>
+  <source src="UE5/ProcBuildingDesigner.mp4" type="video/mp4">
+</video>
