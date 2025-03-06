@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Image with Gravity</title>
+    <style>
+        body { text-align: center; }
+        canvas { background: lightblue; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+		
+		window.onresize = () => {
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;		
+		};
+		
+		const resourcePath = "./res/";
+		const assets = {
+			image : {
+				cans : loadImages(["CAN_0.png", "CAN_1.png", "CAN_2.png"]),
+				bgs  : loadImages(["BG_0.jpg"]),
+				guns : loadImages(["GUN_0.png"])
+			} 
+		};		
+		
+		const scale = 0.5;
+		const gravity = 605;
+		const bounce = 0.7;
+		var time = 0;
+
+		var cans = [];
+		createCan();
+		
+		const input = {
+			color : 'rgba(255, 255, 255, 0.5)',
+			radius : 50,
+			aiming : false,
+			x : 0,
+			y : 0,
+			dx : 0,
+			dy : 0,
+		}		
+ 
+		var loadCount = 0; 
+		function loadWait(){
+			loadCount -= 1;
+			if (loadCount <= 0){
+				draw();
+			}
+		}
+		
+		function loadImages(sources){
+			var images = [];
+		
+			for( var i = 0; i < sources.length; ++i){
+				loadCount += 1
+
+				const image = new Image();
+				image.onload = loadWait;
+				image.src =	resourcePath + sources[i]; 
+				images.push(image);
+			}
+			return images;
+		}
+
+		function defaultCan(){
+			const can = {
+				enabled : true,
+				width: 250 * scale,
+				height: 400 * scale,
+				x: 0,
+				y: 0,
+				velocityX: 0,
+				velocityY: 0,
+				rotation : 0,
+				index : 0, 
+			};
+						
+			can.x = Math.random() * (canvas.width - can.width) + can.width
+			can.y = Math.random() * -2 * can.height
+			return can;
+		}
+		
+		function createCan() {
+			for( var i = cans.length - 1; i >= 0; --i){
+				if(!cans[i].enabled){		
+					cans[i] = defaultCan();
+					return;
+				}
+			}
+
+			cans.push(defaultCan());
+		}
+
+		function destroyCan(can){
+			can.enabled = false;
+		}
+
+		function drawImage(image, x, y, w, h, rotation){
+			ctx.translate(x, y);
+			ctx.rotate(rotation);
+			ctx.drawImage(image, -w / 2, -h / 2, w, h);
+			ctx.rotate(-rotation);
+			ctx.translate(-x, -y);	
+		}
+
+		function drawAimControl(){
+			if(!input.aiming){
+				return;
+			}
+			
+			const x = input.x;
+			const y = input.y;
+			const radius = input.radius;
+			
+			ctx.beginPath();
+			ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+			ctx.lineWidth = 4;
+			ctx.strokeStyle = input.color;
+			ctx.stroke();
+			
+			ctx.beginPath();
+			ctx.arc(x + input.dx, y + input.dy, radius * 0.75, 0, 2 * Math.PI, false);
+			ctx.fillStyle = input.color;
+			ctx.fill();
+		}
+
+		function updateCan(deltaTime, can){
+			if(!can.enabled) return;
+            can.velocityY += gravity * deltaTime;
+            can.x += can.velocityX * deltaTime;
+            can.y += can.velocityY * deltaTime;
+            
+			const ground = canvas.height + can.height * 0.5;
+            if (can.y > ground) {
+				destroyCan(can);
+				createCan();
+            }
+		}
+
+		function drawCan(can){
+			if(!can.enabled) return;
+			var image = assets.image.cans[can.index];
+			drawImage(image, can.x, can.y, can.width, can.height, can.rotation);
+		}
+
+		function update(deltaTime){
+			for( var i = 0; i < cans.length; ++i){
+				updateCan(deltaTime, cans[i]);
+			}
+		}
+		
+        function draw() {
+			
+			const deltaTime = (Date.now() - time) / 1000; // Convert milliseconds to seconds
+			time = Date.now();
+
+			update(deltaTime);
+			
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(assets.image.bgs[0], 0, 0, canvas.width, canvas.height);
+			
+			for( var i = 0; i < cans.length; ++i){
+				drawCan(cans[i]);
+			}
+			
+			drawAimControl();
+            requestAnimationFrame(draw);
+        }
+        
+		function aim(x, y){
+			if (!input.aiming){// initial aim
+				input.x = x;
+				input.y = y;
+				input.aiming = true;
+				return; 
+			}			
+
+			input.dx = x - input.x;
+			input.dy = y - input.y;
+			const length = Math.sqrt(input.dx * input.dx + input.dy * input.dy);
+
+			if(length > input.radius) { //clamp to radius
+				input.dx = (input.dx / length) * input.radius;
+				input.dy = (input.dy / length) * input.radius;	
+			}
+		}
+		
+		canvas.addEventListener("touchstart", (event) => { 
+	        //event.preventDefault();
+            const touch = event.touches[0];
+            aim(touch.clientX, touch.clientY);
+		});
+        
+        canvas.addEventListener("touchend", () => { 
+	        //event.preventDefault();
+			input.aiming = false; 
+		});
+		
+		
+        canvas.addEventListener("touchmove", (event) => {
+	        //event.preventDefault();
+			if(!input.aiming) return;
+            const touch = event.touches[0];
+            aim(touch.clientX, touch.clientY);
+        });
+        	
+		canvas.addEventListener('mousedown', function(event) {
+	        //event.preventDefault();
+			aim(event.clientX, event.clientY);
+		});
+		
+		
+		canvas.addEventListener('mouseup', function(event) {
+	        //event.preventDefault();
+			input.aiming = false; 
+		});
+		
+		canvas.addEventListener('mousemove', function(event) {
+	        //event.preventDefault();
+			if(!input.aiming) return;
+            aim(event.clientX, event.clientY);
+		});
+		
+    </script>
+</body>
+</html>
