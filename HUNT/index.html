@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seager</title>
+	<style>
+        body { text-align: center; }
+		canvas { 
+			background: lightblue; 
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+	<script src="./Assets.js"></script>
+    <script src="./BeerCans.js"></script>
+	<script src="./Effects.js"></script>
+	<script src="./Gun.js"></script>
+	<script src="./SwipeTracker.js"></script>
+	<script src="./Joystick.js"></script>
+
+    <script src="./BeerCanShooter.js"></script>
+
+	<script>
+		const canvas = document.getElementById("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+		window.onresize = () => {
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;		
+		};
+		
+		const assets = {
+			backgrounds : ["BG_0.jpg"],
+			guns : ["GUN_0.png"],
+			cans : ["CAN_0.png", "CAN_1.png", "CAN_2.png"],
+		};
+
+		Assets.load(assets, onReady);
+		
+		var game = new BeerCanShooter();
+		var time = 0;
+
+		function onReady(){
+			game.setup(assets);
+			onFrame();
+		}
+
+		function onFrame(){
+			const deltaTime = (Date.now() - time) / 1000; // Convert milliseconds to seconds
+			time = Date.now();
+			game.update(deltaTime);
+			game.draw();
+            requestAnimationFrame(onFrame);
+		}
+
+    </script>
+</body>
+</html>
