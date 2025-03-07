@@ -54,10 +54,14 @@ function SwipeTracker(onGrab, onMove, onClick) {
             this.currentX = event.clientX;
             this.currentY = event.clientY;
         } else if(event instanceof TouchEvent){
-            const touch = event.touches[0];
-            if(this.touchId == touch.identifier){
-                this.currentX = touch.clientX;
-                this.currentY = touch.clientY;
+            console.log(event);
+
+            for(var i = 0; i < event.touches.length; ++i){
+                const touch = event.touches[i];
+                if(this.touchId == touch.identifier){
+                    this.currentX = touch.clientX;
+                    this.currentY = touch.clientY;
+                }
             } 
         }    
         
@@ -70,8 +74,8 @@ function SwipeTracker(onGrab, onMove, onClick) {
         if(event instanceof MouseEvent){
             this.focused = false; 
         } else if(event instanceof TouchEvent){
-            const touch = event.touches[0];
-            if(Input.touchId == touch.identifier){
+            const touch = event.changedTouches[0];
+            if(this.touchId == touch.identifier){
                 this.focused = false; 
                 this.touchId = -1;
             }

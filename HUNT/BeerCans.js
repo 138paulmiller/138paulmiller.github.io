@@ -69,16 +69,6 @@ class BeerCans {
         can.enabled = false;
     };
     
-    static pixelAt = (can, u, v) => {
-        var imageData = this.pixels[can.index];
-        const index = (v * imageData.width + u) * 4; // Compute the starting index for pixel (x, y)
-        const r = imageData.data[index];
-        const g = imageData.data[index + 1];
-        const b = imageData.data[index + 2];
-        const a = imageData.data[index + 3];
-        return [ r, g, b, a ];
-    };
-    
     static hit = (can, shotForceX, shotForceY, spin) =>{
         can.velocityX = shotForceX;
         can.velocityY = shotForceY;
@@ -197,7 +187,7 @@ class BeerCans {
 
             this.checkWalls(can);
 
-            const ground = this.canvas.height + can.height * 0.5;
+            const ground = this.canvas.height + can.halfHeight;
             if (can.y > ground) {
                 this.destroy(can);
                 this.spawn();
@@ -211,6 +201,8 @@ class BeerCans {
             if(!can.enabled) 
                 continue;
             
+            //this.drawRect(can);
+
             const image = this.images[can.index];
             this.ctx.translate(can.x, can.y);
 			this.ctx.rotate(can.rotation);
