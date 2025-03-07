@@ -1,27 +1,16 @@
-class BeerCans {
-    static canvas;
-    static ctx;
-    static instances = [];
-    static images  = [];
-    static pixels  = []; //temp rasters to store pixel data to sample for hit detection
+function BeerCans(images, scale) {
+    this.canvas = document.getElementById("canvas");
+    this.ctx = canvas.getContext("2d");
+    this.images = images;
+    this.scale = scale;
+    
+    this.instances = [];
+ 
+    this.gravity = 605;
+    this.bounce = 0.87;
+    this.difficulty = 1;
 
-    static width = 0;
-    static height = 0;
-
-    static scale = 0.25;
-    static gravity = 605;
-    static bounce = 0.87;
-    static difficulty = 1;
-
-    static init = (images, scale) => {
-        this.canvas = document.getElementById("canvas");
-        this.ctx = canvas.getContext("2d");
-        this.images = images;
-        this.scale = scale;
-        this.spawn();
-    };
-
-    static new = () => {
+    this.new = () => {
         const image = this.images[0];
         var x = Math.random() * this.canvas.width
         var y = Math.random() * -2 * image.height
@@ -42,7 +31,6 @@ class BeerCans {
             rotation : 0,
             spinTorque : 20,
             angularMomentum : 0.9889,
-
             velocityRotation : 0,
             index : 0, 
         };
@@ -55,7 +43,7 @@ class BeerCans {
         return can;
     };
 
-    static spawn = () => {
+    this.spawn = () => {
         for( var i = this.instances.length - 1; i >= 0; --i){
             if(!this.instances[i].enabled){		
                 this.instances[i] = this.new();
@@ -65,11 +53,11 @@ class BeerCans {
         this.instances.push(this.new());
     };
 
-    static destroy = (can) => {
+    this.destroy = (can) => {
         can.enabled = false;
     };
     
-    static hit = (can, shotForceX, shotForceY, spin) =>{
+    this.hit = (can, shotForceX, shotForceY, spin) =>{
         can.velocityX = shotForceX;
         can.velocityY = shotForceY;
         can.velocityRotation += can.spinTorque * spin;
@@ -87,7 +75,7 @@ class BeerCans {
         }        
     }
 
-    static checkWalls = (can) => {
+    this.checkWalls = (can) => {
 
         if(this.hittingWall) return;
 
@@ -137,7 +125,7 @@ class BeerCans {
         }
     };
 
-    static drawRect = (can) => {
+    this.drawRect = (can) => {
         const cos = Math.cos(-can.rotation);
         const sin = Math.sin(-can.rotation);
 
@@ -172,7 +160,7 @@ class BeerCans {
         this.ctx.stroke();
     };
 
-    static update = (deltaTime) => {				
+    this.update = (deltaTime) => {				
         for( var i = 0; i < this.instances.length; ++i){
             var can = this.instances[i];
             if(!can.enabled) continue;
@@ -195,7 +183,7 @@ class BeerCans {
         }
     };
 
-    static draw = () => {
+    this.draw = () => {
         for( var i = 0; i < this.instances.length; ++i){
             var can = this.instances[i];
             if(!can.enabled) 

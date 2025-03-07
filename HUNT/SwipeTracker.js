@@ -54,8 +54,6 @@ function SwipeTracker(onGrab, onMove, onClick) {
             this.currentX = event.clientX;
             this.currentY = event.clientY;
         } else if(event instanceof TouchEvent){
-            console.log(event);
-
             for(var i = 0; i < event.touches.length; ++i){
                 const touch = event.touches[i];
                 if(this.touchId == touch.identifier){

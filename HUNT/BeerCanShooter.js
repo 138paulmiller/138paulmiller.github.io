@@ -3,8 +3,8 @@ function BeerCanShooter(){
     
     const scale = 0.5;
     const force = { 
-        x : 800,
-        y : -705,
+        x : 1000,
+        y : -605,
     }
     
     this.setup = (assets) => {
@@ -23,25 +23,24 @@ function BeerCanShooter(){
         
         this.swipe = new SwipeTracker(this.onGrab, this.onAim, this.onFire);
 
-        BeerCans.init(this.cans, scale);
-        BeerCans.difficulty = 0.5;
-        BeerCans.instances[0].x = w / 2;
-        BeerCans.instances[0].y = h / 2;
+        this.beercans = new BeerCans(this.cans, scale);
+        this.beercans.difficulty = 0.5;
+        this.beercans.spawn();
     };
 
     this.draw = () => {
         this.ctx.drawImage(this.backgrounds[0], 0, 0, this.canvas.width, this.canvas.height);
-        BeerCans.draw();
+        this.beercans.draw();
         this.gun.draw();	
     };
 
     this.update = (deltaTime) => {
-        BeerCans.update(deltaTime);
+        this.beercans.update(deltaTime);
     };
 
     this.onFire = () => {
-            for(var i = 0; i < BeerCans.instances.length; ++i){
-            var can = BeerCans.instances[i]; 
+            for(var i = 0; i < this.beercans.instances.length; ++i){
+            var can = this.beercans.instances[i]; 
             this.tryHitCan(can);
         }
     };
@@ -82,7 +81,7 @@ function BeerCanShooter(){
             const spin  = dist + noise;
 
             Effects.explosion(px, py, 10);
-            BeerCans.hit(can, xforce, yforce, spin);
+            this.beercans.hit(can, xforce, yforce, spin);
         }
     }
 

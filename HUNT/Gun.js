@@ -4,13 +4,11 @@ function Gun(image) {
     this.image = image;
     this.width = image.width;
     this.height = image.height;
+    this.scale = 0.5;
     this.rotation = 0;
-    
     this.aim =  { x : 0, y : 0};
     this.crosshairSize = 20;
     this.crosshairWidth = 4;
-    this.deadzone = 0.1;
-    this.aimSpeed = 2000;
 
     this.clampToCanvas = (x, y) => {
         var clamped = false;
@@ -47,9 +45,12 @@ function Gun(image) {
 
     this.draw = () => {
         // TODO rotate towards
+
+        const w = this.width * this.scale;
+        const h = this.height * this.scale;
    
         const x = this.canvas.width / 2;
-        const y = this.canvas.height;
+        const y = this.canvas.height - h * 0.15;
 
         const dx = this.aim.x - x;
         const dy = this.aim.y - y;
@@ -58,7 +59,7 @@ function Gun(image) {
 
         this.ctx.translate(x, y);
         this.ctx.rotate(this.rotation);
-        this.ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
+        this.ctx.drawImage(this.image, -w / 2, -h / 2, w, h);
         this.ctx.rotate(-this.rotation);
         this.ctx.translate(-x, -y);	
 
