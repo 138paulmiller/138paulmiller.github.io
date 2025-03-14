@@ -1,29 +1,17 @@
-function BeerCans(images, scale) {
+function BeerCans(images, scale, onCanDestroy) {
     this.canvas = document.getElementById("canvas");
     this.ctx = canvas.getContext("2d");
     this.images = images;
     this.scale = scale;
-    
+    this.onCanDestroy = onCanDestroy;
     this.instances = [];
  
-    this.gravity = 605;
-    this.bounce = 0.87;
-    this.difficulty = 1;
-
-    this.new = () => {
-        const image = this.images[0];
-        var x = Math.random() * this.canvas.width
-        var y = Math.random() * -2 * image.height
-
-        if(x < image.width / 2) x = image.width / 2.0;  
-        if(x > this.canvas.width - image.width / 2) x = image.width / 2.0;  
-        
+    this.new = (x , y) => {
+        const image = this.images[0];    
         const can = {
             enabled : true,
-            width: 0,
-            height: 0,
-            haflWidth: 0,
-            halfHeight: 0,
+            width: image.width,
+            height: image.height,
             x: x,
             y: y,
             velocityX: 0,
@@ -32,31 +20,57 @@ function BeerCans(images, scale) {
             spinTorque : 20,
             angularMomentum : 0.9889,
             velocityRotation : 0,
-            index : 0, 
+            index : 0,
+            scale : this.scale
         };
-                
-        can.width = this.scale * image.width;
-        can.height = this.scale * image.height;
-        can.halfWidth = can.width / 2;
-        can.halfHeight = can.height / 2;
-
+        
         return can;
     };
 
-    this.spawn = () => {
+    this.spawn = (x, y) => {
+        console.log('Spawn Can', x, ' ', y)
         for( var i = this.instances.length - 1; i >= 0; --i){
             if(!this.instances[i].enabled){		
-                this.instances[i] = this.new();
+                this.instances[i] = this.new(x, y);
                 return;
             }
         }
-        this.instances.push(this.new());
+        this.instances.push(this.new(x, y));
     };
 
     this.destroy = (can) => {
         can.enabled = false;
     };
     
+    this.intersects = (can, px, py) => { 
+        var x = can.x;
+        var y = can.y;
+        var w = can.width * can.scale;
+        var h = can.height * can.scale;
+        var rot = can.rotation;
+
+        //Calculate Point In Can rect space
+        // Compute the cosine and sine of the rotation angle
+        const cos = Math.cos(rot);
+        const sin = Math.sin(rot);
+      
+        // Translate the point relative to the box center
+        const dx = px - x;
+        const dy = py - y;
+      
+        // Project the translated point onto the box's local axes
+        const locX = dx * cos + dy * sin;
+        const locY = -dx * sin + dy * cos;
+      
+        // Check if the point lies within the box's half-extents
+        if (Math.abs(locX) <= w / 2 && Math.abs(locY) <= h / 2) {
+            const offx = dx / w;
+            const offy = dy / h;
+            return {x : offx, y : offy}
+        }
+        return false;
+    }
+
     this.hit = (can, shotForceX, shotForceY, spin) =>{
         can.velocityX = shotForceX;
         can.velocityY = shotForceY;
@@ -65,78 +79,28 @@ function BeerCans(images, scale) {
 
         if(can.index >= this.images.length){    
             this.destroy(can);
-            this.spawn();
         }else{
             const image = this.images[can.index];
-            can.width = this.scale * image.width;
-            can.height = this.scale * image.height;
-            can.halfWidth = can.width / 2;
-            can.halfHeight = can.height / 2;
+            can.width = image.width;
+            can.height = image.height;
         }        
     }
-
-    this.checkWalls = (can) => {
-
-        if(this.hittingWall) return;
-
-        const cos = Math.cos(-can.rotation);
-        const sin = Math.sin(-can.rotation);
-
-        const x0 = -can.halfWidth;
-        const y0 = -can.halfHeight;
-        const x1 = -can.halfWidth;
-        const y1 = +can.halfHeight;
-        const x2 = +can.halfWidth;
-        const y2 = -can.halfHeight;
-        const x3 = +can.halfWidth;
-        const y3 = +can.halfHeight;
-
-        const rx0 = (x0 * cos + y0 * sin) + can.x;
-        const rx1 = (x1 * cos + y1 * sin) + can.x;
-        const rx2 = (x2 * cos + y2 * sin) + can.x;
-        const rx3 = (x3 * cos + y3 * sin) + can.x;
-
-        const ry0 = (-x0 * sin + y0 * cos) + can.y;
-        const ry1 = (-x1 * sin + y1 * cos) + can.y;
-        const ry2 = (-x2 * sin + y2 * cos) + can.y;
-        const ry3 = (-x3 * sin + y3 * cos) + can.y;
-
-        this.ctx.moveTo(rx0, ry0);
-        this.ctx.lineTo(rx1, ry1);
-        this.ctx.moveTo(rx0, ry0);
-        this.ctx.lineTo(rx2, ry2);      
-        this.ctx.stroke();
-        this.ctx.moveTo(rx3, ry3);
-        this.ctx.lineTo(rx1, ry1);
-        this.ctx.moveTo(rx3, ry3);
-        this.ctx.lineTo(rx2, ry2);    
-        this.ctx.stroke();
-
-        const left = Math.min(rx0, rx1, rx2, rx3);
-        const right = Math.max(rx0, rx1, rx2, rx3); 
-        if(left < 0 || right > this.canvas.width){
-            can.velocityX = -1 * can.velocityX * this.bounce;
-            can.velocityRotation *= -1 * can.angularMomentum * this.bounce;
-
-            this.hittingWall = true;
-            setInterval(()=>{
-                this.hittingWall = false;
-            }, 300);
-        }
-    };
 
     this.drawRect = (can) => {
         const cos = Math.cos(-can.rotation);
         const sin = Math.sin(-can.rotation);
 
-        const x0 = -can.halfWidth;
-        const y0 = -can.halfHeight;
-        const x1 = -can.halfWidth;
-        const y1 = +can.halfHeight;
-        const x2 = +can.halfWidth;
-        const y2 = -can.halfHeight;
-        const x3 = +can.halfWidth;
-        const y3 = +can.halfHeight;
+        var halfWidth = (can.width * can.scale) * 0.5;
+        var halfHeight = (can.height * can.scale) * 0.5;
+
+        const x0 = -halfWidth;
+        const y0 = -halfHeight;
+        const x1 = -halfWidth;
+        const y1 = +halfHeight;
+        const x2 = +halfWidth;
+        const y2 = -halfHeight;
+        const x3 = +halfWidth;
+        const y3 = +halfHeight;
 
         const rx0 = (x0 * cos + y0 * sin) + can.x;
         const rx1 = (x1 * cos + y1 * sin) + can.x;
@@ -160,26 +124,11 @@ function BeerCans(images, scale) {
         this.ctx.stroke();
     };
 
-    this.update = (deltaTime) => {				
+    this.update = (delta, processor) => {				
         for( var i = 0; i < this.instances.length; ++i){
             var can = this.instances[i];
             if(!can.enabled) continue;
-
-            const scalar = this.difficulty * deltaTime;
-            can.velocityY += this.gravity * scalar;
-            can.x += can.velocityX * scalar;
-            can.y += can.velocityY * scalar;
-            
-            can.velocityRotation *= can.angularMomentum;	
-            can.rotation += can.velocityRotation * scalar;
-
-            this.checkWalls(can);
-
-            const ground = this.canvas.height + can.halfHeight;
-            if (can.y > ground) {
-                this.destroy(can);
-                this.spawn();
-            }
+            processor(can, delta);
         }
     };
 
@@ -190,11 +139,15 @@ function BeerCans(images, scale) {
                 continue;
             
             //this.drawRect(can);
+            var width = can.width * can.scale;
+            var height = can.height * can.scale;
+            var halfWidth = width * 0.5;
+            var halfHeight = height  * 0.5;
 
             const image = this.images[can.index];
             this.ctx.translate(can.x, can.y);
 			this.ctx.rotate(can.rotation);
-			this.ctx.drawImage(image, -can.halfWidth, -can.halfHeight, can.width, can.height);
+			this.ctx.drawImage(image, -halfWidth, -halfHeight, width, height);
 			this.ctx.rotate(-can.rotation);
 			this.ctx.translate(-can.x, -can.y);	
         }

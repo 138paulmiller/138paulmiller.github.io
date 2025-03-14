@@ -16,11 +16,28 @@
 			height: 100%;
 			margin: 0;
 			padding: 0;
+			user-select: none;   /* Prevent text selection */
+			-webkit-user-select: none; /* Safari */
+			-moz-user-select: none;    /* Firefox */
+			-ms-user-select: none;     /* IE/Edge */
+		}
+
+		select {
+			position: absolute;
+			background-color: green;
+			border: 2px solid #ccc;
 		}
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+	<div>
+		<select id="levelSelect">
+			<option value="juggle">Juggle</option>
+			<option value="gallery">Gallery</option>
+		</select>
+		<canvas id="canvas">
+		</canvas>
+	</div>
 
 	<script src="./Assets.js"></script>
     <script src="./BeerCans.js"></script>
@@ -29,13 +46,28 @@
 	<script src="./SwipeTracker.js"></script>
 	<script src="./Joystick.js"></script>
 
-    <script src="./BeerCanShooter.js"></script>
+    <script src="./levels/Juggle.js"></script>
+    <script src="./levels/Gallery.js"></script>
 
 	<script>
+		const GAMES =  {
+			"juggle" : () => { return new Juggle() },
+			"gallery" : () => { return new Gallery() },
+		};
+		var currentGame = "gallery";
+
 		const canvas = document.getElementById("canvas");
-        canvas.width = window.outerWidth;
-        canvas.height = window.outerHeight;
-		window.onresize = ()=>{onReady();};
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+		window.onresize = ()=>{ 
+			onReady();
+		};
+
+		const levelSelect = document.getElementById("levelSelect");
+		levelSelect.value = currentGame;
+		levelSelect.addEventListener("change", (event) => {
+			startGame(event.target.value);
+		});
 
 		function fullscreen(element){
 			if (element.requestFullscreen) {
@@ -58,24 +90,28 @@
 		};
 		Assets.load(assets, onReady);
 		
-		var game;
-		var time;
+		this.game = null;
+		this.time;
 
-		function onReady(){
-			canvas.width = window.outerWidth; // innerWidth
-			canvas.height = window.outerHeight;	//	innerHeight
-
-			game = new BeerCanShooter();
-			time = 0;
-			game.setup(assets);
+		function startGame(game){
+			currentGame = game;
+			this.game = GAMES[currentGame]();
+			this.time = Date.now();
+			this.game.setup(assets);
 			onFrame();
 		}
 
+		function onReady(){
+			canvas.width = window.innerWidth; // innerWidth
+			canvas.height = window.innerHeight;	//	innerHeight
+			startGame(currentGame);
+		}
+
 		function onFrame(){
-			const deltaTime = (Date.now() - time) / 1000; // Convert milliseconds to seconds
-			time = Date.now();
-			game.update(deltaTime);
-			game.draw();
+			const deltaTime = (Date.now() - this.time) / 1000; // Convert milliseconds to seconds
+			this.time = Date.now();
+			this.game.update(deltaTime);
+			this.game.draw();
             requestAnimationFrame(onFrame);
 		}
 
